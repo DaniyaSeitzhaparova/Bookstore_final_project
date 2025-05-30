@@ -49,7 +49,7 @@ func (h *UserHandler) CreateUser(ctx context.Context, req *pb.CreateUserRequest)
 	}
 	if data, err := json.Marshal(evt); err == nil {
 		if err := h.nc.Publish("user.created", data); err != nil {
-			log.Printf("⚠️ NATS publish error (user.created): %v", err)
+			log.Printf("⚠ NATS publish error (user.created): %v", err)
 		}
 	}
 

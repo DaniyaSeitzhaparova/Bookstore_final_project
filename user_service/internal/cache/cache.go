@@ -3,6 +3,7 @@ package cache
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/OshakbayAigerim/read_space/user_service/internal/domain"
@@ -25,6 +26,7 @@ func (c *UserCache) Get(ctx context.Context, id string) (*domain.User, error) {
 	data, err := c.client.Get(ctx, userKey(id)).Bytes()
 	if err != nil {
 		if err == redis.Nil {
+			fmt.Printf("Cache MISS for user ID: %s\n", id)
 			return nil, nil
 		}
 		return nil, err
@@ -35,6 +37,7 @@ func (c *UserCache) Get(ctx context.Context, id string) (*domain.User, error) {
 		return nil, err
 	}
 
+	fmt.Printf("Cache HIT for user ID: %s\n", id)
 	return &user, nil
 }
 
