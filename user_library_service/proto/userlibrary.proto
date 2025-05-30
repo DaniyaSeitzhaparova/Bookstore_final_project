@@ -1,0 +1,67 @@
+syntax = "proto3";
+
+package userlibrary;
+
+import "google/protobuf/empty.proto";
+
+option go_package = "github.com/OshakbayAigerim/read_space/user_library_service/proto/userlibrarypb;userlibrarypb";
+
+message UserBook {
+  string id      = 1;
+  string user_id = 2;
+  string book_id = 3;
+}
+
+message AssignBookRequest {
+  string user_id = 1;
+  string book_id = 2;
+}
+
+message UnassignBookRequest {
+  string user_id = 1;
+  string book_id = 2;
+}
+
+message ListUserBooksRequest {
+  string user_id = 1;
+}
+
+message GetEntryRequest {
+  string id = 1;
+}
+
+message DeleteEntryRequest {
+  string id = 1;
+}
+
+message UpdateEntryRequest {
+  UserBook entry = 1;
+}
+
+message ListByBookRequest {
+  string book_id = 1;
+}
+
+message AssignBookResponse {
+  UserBook entry = 1;
+}
+
+message UnassignBookResponse {
+  bool success = 1;
+}
+
+message ListUserBooksResponse {
+  repeated UserBook entries = 1;
+}
+
+service UserLibraryService {
+  rpc AssignBook       (AssignBookRequest)       returns (AssignBookResponse);
+  rpc UnassignBook     (UnassignBookRequest)     returns (UnassignBookResponse);
+  rpc ListUserBooks    (ListUserBooksRequest)    returns (ListUserBooksResponse);
+
+  rpc GetEntry         (GetEntryRequest)         returns (AssignBookResponse);
+  rpc DeleteEntry      (DeleteEntryRequest)      returns (UnassignBookResponse);
+  rpc UpdateEntry      (UpdateEntryRequest)      returns (AssignBookResponse);
+  rpc ListAllEntries   (google.protobuf.Empty)   returns (ListUserBooksResponse);
+  rpc ListByBook       (ListByBookRequest)       returns (ListUserBooksResponse);
+}

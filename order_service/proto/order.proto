@@ -1,0 +1,64 @@
+syntax = "proto3";
+
+package order;
+
+option go_package = "github.com/OshakbayAigerim/readspace/order_service/proto/orderpb;orderpb";
+
+message Order {
+  string id         = 1;
+  string user_id    = 2;
+  repeated string book_ids    = 3;
+  string status     = 4;
+  string created_at = 5;
+  string updated_at = 6;
+}
+
+message CreateOrderRequest {
+  string user_id         = 1;
+  repeated string book_ids = 2;
+}
+
+message UpdateOrderRequest {
+  Order order = 1;
+}
+
+message BookOperationRequest {
+  string order_id = 1;
+  string book_id  = 2;
+}
+
+message StatusRequest {
+  string status = 1;
+}
+
+message OrderResponse {
+  Order order = 1;
+}
+
+message OrderID {
+  string id = 1;
+}
+
+message ListOrdersByUserRequest {
+  string user_id = 1;
+}
+
+message OrderList {
+  repeated Order orders = 1;
+}
+
+message Empty {}
+
+service OrderService {
+  rpc CreateOrder           (CreateOrderRequest)       returns (OrderResponse);
+  rpc GetOrder              (OrderID)                  returns (OrderResponse);
+  rpc ListOrdersByUser      (ListOrdersByUserRequest)  returns (OrderList);
+  rpc CancelOrder           (OrderID)                  returns (OrderResponse);
+  rpc ReturnBook            (OrderID)                  returns (OrderResponse);
+  rpc DeleteOrder           (OrderID)                  returns (Empty);
+  rpc UpdateOrder           (UpdateOrderRequest)       returns (OrderResponse);
+  rpc AddBookToOrder        (BookOperationRequest)     returns (OrderResponse);
+  rpc RemoveBookFromOrder   (BookOperationRequest)     returns (OrderResponse);
+  rpc ListAllOrders         (Empty)                    returns (OrderList);
+  rpc ListOrdersByStatus    (StatusRequest)            returns (OrderList);
+}

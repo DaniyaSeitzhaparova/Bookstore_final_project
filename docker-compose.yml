@@ -1,0 +1,127 @@
+version: '3.8'
+
+services:
+  mongo:
+    image: mongo:5.0
+    restart: unless-stopped
+    volumes:
+      - mongo_data:/data/db
+    ports:
+      - "27017:27017"
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD-SHELL", "mongo --quiet --eval \"db.adminCommand('ping')\""]
+      interval: 5s
+      timeout: 2s
+      retries: 5
+
+  nats:
+    image: nats:2.9
+    restart: unless-stopped
+    ports:
+      - "4223:4222"      # хост 4223 → контейнер 4222
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD", "nats", "ping", "-s", "nats://127.0.0.1:4222"]
+      interval: 5s
+      timeout: 2s
+      retries: 5
+
+  api_gateway:
+    build:
+      context: .
+      dockerfile: api_gateway/Dockerfile
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/readspace
+      - NATS_URL=nats://nats:4222
+    ports:
+      - "8080:8080"
+    depends_on:
+      - mongo
+      - nats
+    networks:
+      - backend
+
+  book_service:
+    build:
+      context: .
+      dockerfile: book_service/Dockerfile
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/readspace
+      - NATS_URL=nats://nats:4222
+    ports:
+      - "50051:50051"    # book gRPC
+    depends_on:
+      - mongo
+      - nats
+    networks:
+      - backend
+
+  order_service:
+    build:
+      context: .
+      dockerfile: order_service/Dockerfile
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/readspace
+      - NATS_URL=nats://nats:4222
+    ports:
+      - "50052:50052"    # order gRPC
+    depends_on:
+      - mongo
+      - nats
+    networks:
+      - backend
+
+  user_service:
+    build:
+      context: .
+      dockerfile: user_service/Dockerfile
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/readspace
+      - NATS_URL=nats://nats:4222
+    ports:
+      - "50053:50053"    # user gRPC
+    depends_on:
+      - mongo
+      - nats
+    networks:
+      - backend
+
+  exchange_service:
+    build:
+      context: .
+      dockerfile: exchange_service/Dockerfile
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/readspace
+      - NATS_URL=nats://nats:4222
+    ports:
+      - "50054:50054"    # exchange gRPC
+    depends_on:
+      - mongo
+      - nats
+    networks:
+      - backend
+
+  notification_service:
+    build:
+      context: .
+      dockerfile: notification_service/Dockerfile
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/readspace
+      - NATS_URL=nats://nats:4222
+    ports:
+      - "50055:50055"    # notification gRPC
+    depends_on:
+      - mongo
+      - nats
+    networks:
+      - backend
+
+volumes:
+  mongo_data:
+
+networks:
+  backend:
+    driver: bridge

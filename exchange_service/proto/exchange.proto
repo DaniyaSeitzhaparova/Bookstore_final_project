@@ -1,0 +1,75 @@
+syntax = "proto3";
+
+package exchange;
+
+option go_package = "github.com/OshakbayAigerim/read_space/exchange_service/proto/exchangepb;exchangepb";
+
+message ExchangeOffer {
+  string id                    = 1;
+  string owner_id              = 2;
+  string counterparty_id       = 3;
+  repeated string offered_book_ids   = 4;
+  repeated string requested_book_ids = 5;
+  string status                = 6;
+  string created_at            = 7;
+  string updated_at            = 8;
+}
+
+message CreateOfferRequest {
+  string owner_id            = 1;
+  string counterparty_id     = 2;
+  repeated string offered_book_ids   = 3;
+  repeated string requested_book_ids = 4;
+}
+
+message AcceptOfferRequest {
+  string offer_id     = 1;
+  string requester_id = 2;
+}
+
+message UpdateOfferRequest {
+  ExchangeOffer offer = 1;
+}
+
+message BookOpRequest {
+  string offer_id = 1;
+  string book_id  = 2;
+}
+
+message StatusRequest {
+  string status = 1;
+}
+
+message OfferID {
+  string id = 1;
+}
+
+message UserID {
+  string user_id = 1;
+}
+
+message OfferResponse {
+  ExchangeOffer offer = 1;
+}
+
+message OfferList {
+  repeated ExchangeOffer offers = 1;
+}
+
+message Empty {}
+
+service ExchangeService {
+  rpc CreateOffer        (CreateOfferRequest)   returns (OfferResponse);
+  rpc GetOffer           (OfferID)              returns (OfferResponse);
+  rpc ListOffersByUser   (UserID)               returns (OfferList);
+  rpc ListPendingOffers  (Empty)                returns (OfferList);
+  rpc AcceptOffer        (AcceptOfferRequest)   returns (OfferResponse);
+  rpc DeclineOffer       (OfferID)              returns (OfferResponse);
+  rpc DeleteOffer        (OfferID)              returns (Empty);
+
+  rpc UpdateOffer        (UpdateOfferRequest)   returns (OfferResponse);
+  rpc AddOfferedBook     (BookOpRequest)        returns (OfferResponse);
+  rpc RemoveOfferedBook  (BookOpRequest)        returns (OfferResponse);
+  rpc ListAllOffers      (Empty)                returns (OfferList);
+  rpc ListOffersByStatus (StatusRequest)        returns (OfferList);
+}
