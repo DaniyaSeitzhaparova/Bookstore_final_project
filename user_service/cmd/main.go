@@ -42,7 +42,7 @@ func main() {
 	grpcServer := grpc.NewServer()
 	pb.RegisterUserServiceServer(grpcServer, srv)
 
-	log.Println("✅ UserService gRPC server started on port 50052")
+	log.Println("UserService gRPC server started on port 50052")
 	if err := grpcServer.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)
 	}
