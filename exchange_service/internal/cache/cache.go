@@ -3,11 +3,11 @@ package cache
 import (
 	"context"
 	"encoding/json"
-	"github.com/redis/go-redis/v9"
 	"time"
 
 	"github.com/OshakbayAigerim/read_space/exchange_service/internal/domain"
 	"github.com/OshakbayAigerim/read_space/exchange_service/internal/repository"
+	"github.com/redis/go-redis/v9"
 )
 
 type ExchangeCache interface {
@@ -29,7 +29,8 @@ func NewRedisExchangeCache(repo repository.ExchangeRepository, rdb redis.Univers
 
 func (c *RedisExchangeCache) ListByUser(ctx context.Context, userID string) ([]*domain.ExchangeOffer, error) {
 	key := "exchange:offers:user:" + userID
-	if data, err := c.rdb.Get(ctx, key).Bytes(); err == nil {
+	data, err := c.rdb.Get(ctx, key).Bytes()
+	if err == nil {
 		var offers []*domain.ExchangeOffer
 		if json.Unmarshal(data, &offers) == nil {
 			return offers, nil
@@ -42,15 +43,17 @@ func (c *RedisExchangeCache) ListByUser(ctx context.Context, userID string) ([]*
 	if err != nil {
 		return nil, err
 	}
-	if blob, err := json.Marshal(offers); err == nil {
-		_ = c.rdb.Set(ctx, key, blob, c.ttl).Err()
+	blob, err := json.Marshal(offers)
+	if err == nil {
+		c.rdb.Set(ctx, key, blob, c.ttl)
 	}
 	return offers, nil
 }
 
 func (c *RedisExchangeCache) ListPending(ctx context.Context) ([]*domain.ExchangeOffer, error) {
 	key := "exchange:offers:pending"
-	if data, err := c.rdb.Get(ctx, key).Bytes(); err == nil {
+	data, err := c.rdb.Get(ctx, key).Bytes()
+	if err == nil {
 		var offers []*domain.ExchangeOffer
 		if json.Unmarshal(data, &offers) == nil {
 			return offers, nil
@@ -63,8 +66,9 @@ func (c *RedisExchangeCache) ListPending(ctx context.Context) ([]*domain.Exchang
 	if err != nil {
 		return nil, err
 	}
-	if blob, err := json.Marshal(offers); err == nil {
-		_ = c.rdb.Set(ctx, key, blob, c.ttl).Err()
+	blob, err := json.Marshal(offers)
+	if err == nil {
+		c.rdb.Set(ctx, key, blob, c.ttl)
 	}
 	return offers, nil
 }

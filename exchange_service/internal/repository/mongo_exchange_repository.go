@@ -124,3 +124,117 @@ func (r *mongoExchangeRepo) DeleteOffer(ctx context.Context, id string) error {
 	_, err = r.collection.DeleteOne(ctx, bson.M{"_id": objID})
 	return err
 }
+
+// --- New methods ---
+
+func (r *mongoExchangeRepo) UpdateOffer(ctx context.Context, offer *domain.ExchangeOffer) (*domain.ExchangeOffer, error) {
+	now := primitive.NewDateTimeFromTime(time.Now())
+	after := options.After
+	opts := options.FindOneAndUpdateOptions{ReturnDocument: &after}
+
+	filter := bson.M{"_id": offer.ID}
+	update := bson.M{"$set": bson.M{
+		"owner_id":           offer.OwnerID,
+		"counterparty_id":    offer.CounterpartyID,
+		"offered_book_ids":   offer.OfferedBookIDs,
+		"requested_book_ids": offer.RequestedBookIDs,
+		"status":             offer.Status,
+		"updated_at":         now,
+	}}
+
+	var o domain.ExchangeOffer
+	if err := r.collection.FindOneAndUpdate(ctx, filter, update, &opts).Decode(&o); err != nil {
+		return nil, err
+	}
+	return &o, nil
+}
+
+func (r *mongoExchangeRepo) AddOfferedBook(ctx context.Context, offerID, bookID string) (*domain.ExchangeOffer, error) {
+	objID, err := primitive.ObjectIDFromHex(offerID)
+	if err != nil {
+		return nil, err
+	}
+	bid, err := primitive.ObjectIDFromHex(bookID)
+	if err != nil {
+		return nil, err
+	}
+
+	now := primitive.NewDateTimeFromTime(time.Now())
+	after := options.After
+	opts := options.FindOneAndUpdateOptions{ReturnDocument: &after}
+
+	filter := bson.M{"_id": objID}
+	update := bson.M{
+		"$push": bson.M{"offered_book_ids": bid},
+		"$set":  bson.M{"updated_at": now},
+	}
+
+	var o domain.ExchangeOffer
+	if err := r.collection.FindOneAndUpdate(ctx, filter, update, &opts).Decode(&o); err != nil {
+		return nil, err
+	}
+	return &o, nil
+}
+
+func (r *mongoExchangeRepo) RemoveOfferedBook(ctx context.Context, offerID, bookID string) (*domain.ExchangeOffer, error) {
+	objID, err := primitive.ObjectIDFromHex(offerID)
+	if err != nil {
+		return nil, err
+	}
+	bid, err := primitive.ObjectIDFromHex(bookID)
+	if err != nil {
+		return nil, err
+	}
+
+	now := primitive.NewDateTimeFromTime(time.Now())
+	after := options.After
+	opts := options.FindOneAndUpdateOptions{ReturnDocument: &after}
+
+	filter := bson.M{"_id": objID}
+	update := bson.M{
+		"$pull": bson.M{"offered_book_ids": bid},
+		"$set":  bson.M{"updated_at": now},
+	}
+
+	var o domain.ExchangeOffer
+	if err := r.collection.FindOneAndUpdate(ctx, filter, update, &opts).Decode(&o); err != nil {
+		return nil, err
+	}
+	return &o, nil
+}
+
+func (r *mongoExchangeRepo) ListAllOffers(ctx context.Context) ([]*domain.ExchangeOffer, error) {
+	cursor, err := r.collection.Find(ctx, bson.M{})
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	var offers []*domain.ExchangeOffer
+	for cursor.Next(ctx) {
+		var o domain.ExchangeOffer
+		if err := cursor.Decode(&o); err != nil {
+			return nil, err
+		}
+		offers = append(offers, &o)
+	}
+	return offers, nil
+}
+
+func (r *mongoExchangeRepo) ListOffersByStatus(ctx context.Context, status string) ([]*domain.ExchangeOffer, error) {
+	cursor, err := r.collection.Find(ctx, bson.M{"status": status})
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	var offers []*domain.ExchangeOffer
+	for cursor.Next(ctx) {
+		var o domain.ExchangeOffer
+		if err := cursor.Decode(&o); err != nil {
+			return nil, err
+		}
+		offers = append(offers, &o)
+	}
+	return offers, nil
+}

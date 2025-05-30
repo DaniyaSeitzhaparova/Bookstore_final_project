@@ -19,13 +19,18 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	ExchangeService_CreateOffer_FullMethodName       = "/exchange.ExchangeService/CreateOffer"
-	ExchangeService_GetOffer_FullMethodName          = "/exchange.ExchangeService/GetOffer"
-	ExchangeService_ListOffersByUser_FullMethodName  = "/exchange.ExchangeService/ListOffersByUser"
-	ExchangeService_ListPendingOffers_FullMethodName = "/exchange.ExchangeService/ListPendingOffers"
-	ExchangeService_AcceptOffer_FullMethodName       = "/exchange.ExchangeService/AcceptOffer"
-	ExchangeService_DeclineOffer_FullMethodName      = "/exchange.ExchangeService/DeclineOffer"
-	ExchangeService_DeleteOffer_FullMethodName       = "/exchange.ExchangeService/DeleteOffer"
+	ExchangeService_CreateOffer_FullMethodName        = "/exchange.ExchangeService/CreateOffer"
+	ExchangeService_GetOffer_FullMethodName           = "/exchange.ExchangeService/GetOffer"
+	ExchangeService_ListOffersByUser_FullMethodName   = "/exchange.ExchangeService/ListOffersByUser"
+	ExchangeService_ListPendingOffers_FullMethodName  = "/exchange.ExchangeService/ListPendingOffers"
+	ExchangeService_AcceptOffer_FullMethodName        = "/exchange.ExchangeService/AcceptOffer"
+	ExchangeService_DeclineOffer_FullMethodName       = "/exchange.ExchangeService/DeclineOffer"
+	ExchangeService_DeleteOffer_FullMethodName        = "/exchange.ExchangeService/DeleteOffer"
+	ExchangeService_UpdateOffer_FullMethodName        = "/exchange.ExchangeService/UpdateOffer"
+	ExchangeService_AddOfferedBook_FullMethodName     = "/exchange.ExchangeService/AddOfferedBook"
+	ExchangeService_RemoveOfferedBook_FullMethodName  = "/exchange.ExchangeService/RemoveOfferedBook"
+	ExchangeService_ListAllOffers_FullMethodName      = "/exchange.ExchangeService/ListAllOffers"
+	ExchangeService_ListOffersByStatus_FullMethodName = "/exchange.ExchangeService/ListOffersByStatus"
 )
 
 // ExchangeServiceClient is the client API for ExchangeService service.
@@ -39,6 +44,11 @@ type ExchangeServiceClient interface {
 	AcceptOffer(ctx context.Context, in *AcceptOfferRequest, opts ...grpc.CallOption) (*OfferResponse, error)
 	DeclineOffer(ctx context.Context, in *OfferID, opts ...grpc.CallOption) (*OfferResponse, error)
 	DeleteOffer(ctx context.Context, in *OfferID, opts ...grpc.CallOption) (*Empty, error)
+	UpdateOffer(ctx context.Context, in *UpdateOfferRequest, opts ...grpc.CallOption) (*OfferResponse, error)
+	AddOfferedBook(ctx context.Context, in *BookOpRequest, opts ...grpc.CallOption) (*OfferResponse, error)
+	RemoveOfferedBook(ctx context.Context, in *BookOpRequest, opts ...grpc.CallOption) (*OfferResponse, error)
+	ListAllOffers(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*OfferList, error)
+	ListOffersByStatus(ctx context.Context, in *StatusRequest, opts ...grpc.CallOption) (*OfferList, error)
 }
 
 type exchangeServiceClient struct {
@@ -119,6 +129,56 @@ func (c *exchangeServiceClient) DeleteOffer(ctx context.Context, in *OfferID, op
 	return out, nil
 }
 
+func (c *exchangeServiceClient) UpdateOffer(ctx context.Context, in *UpdateOfferRequest, opts ...grpc.CallOption) (*OfferResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(OfferResponse)
+	err := c.cc.Invoke(ctx, ExchangeService_UpdateOffer_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *exchangeServiceClient) AddOfferedBook(ctx context.Context, in *BookOpRequest, opts ...grpc.CallOption) (*OfferResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(OfferResponse)
+	err := c.cc.Invoke(ctx, ExchangeService_AddOfferedBook_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *exchangeServiceClient) RemoveOfferedBook(ctx context.Context, in *BookOpRequest, opts ...grpc.CallOption) (*OfferResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(OfferResponse)
+	err := c.cc.Invoke(ctx, ExchangeService_RemoveOfferedBook_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *exchangeServiceClient) ListAllOffers(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*OfferList, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(OfferList)
+	err := c.cc.Invoke(ctx, ExchangeService_ListAllOffers_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *exchangeServiceClient) ListOffersByStatus(ctx context.Context, in *StatusRequest, opts ...grpc.CallOption) (*OfferList, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(OfferList)
+	err := c.cc.Invoke(ctx, ExchangeService_ListOffersByStatus_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ExchangeServiceServer is the server API for ExchangeService service.
 // All implementations must embed UnimplementedExchangeServiceServer
 // for forward compatibility.
@@ -130,6 +190,11 @@ type ExchangeServiceServer interface {
 	AcceptOffer(context.Context, *AcceptOfferRequest) (*OfferResponse, error)
 	DeclineOffer(context.Context, *OfferID) (*OfferResponse, error)
 	DeleteOffer(context.Context, *OfferID) (*Empty, error)
+	UpdateOffer(context.Context, *UpdateOfferRequest) (*OfferResponse, error)
+	AddOfferedBook(context.Context, *BookOpRequest) (*OfferResponse, error)
+	RemoveOfferedBook(context.Context, *BookOpRequest) (*OfferResponse, error)
+	ListAllOffers(context.Context, *Empty) (*OfferList, error)
+	ListOffersByStatus(context.Context, *StatusRequest) (*OfferList, error)
 	mustEmbedUnimplementedExchangeServiceServer()
 }
 
@@ -160,6 +225,21 @@ func (UnimplementedExchangeServiceServer) DeclineOffer(context.Context, *OfferID
 }
 func (UnimplementedExchangeServiceServer) DeleteOffer(context.Context, *OfferID) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteOffer not implemented")
+}
+func (UnimplementedExchangeServiceServer) UpdateOffer(context.Context, *UpdateOfferRequest) (*OfferResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateOffer not implemented")
+}
+func (UnimplementedExchangeServiceServer) AddOfferedBook(context.Context, *BookOpRequest) (*OfferResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AddOfferedBook not implemented")
+}
+func (UnimplementedExchangeServiceServer) RemoveOfferedBook(context.Context, *BookOpRequest) (*OfferResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RemoveOfferedBook not implemented")
+}
+func (UnimplementedExchangeServiceServer) ListAllOffers(context.Context, *Empty) (*OfferList, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListAllOffers not implemented")
+}
+func (UnimplementedExchangeServiceServer) ListOffersByStatus(context.Context, *StatusRequest) (*OfferList, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListOffersByStatus not implemented")
 }
 func (UnimplementedExchangeServiceServer) mustEmbedUnimplementedExchangeServiceServer() {}
 func (UnimplementedExchangeServiceServer) testEmbeddedByValue()                         {}
@@ -308,6 +388,96 @@ func _ExchangeService_DeleteOffer_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ExchangeService_UpdateOffer_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateOfferRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ExchangeServiceServer).UpdateOffer(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ExchangeService_UpdateOffer_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ExchangeServiceServer).UpdateOffer(ctx, req.(*UpdateOfferRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ExchangeService_AddOfferedBook_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(BookOpRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ExchangeServiceServer).AddOfferedBook(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ExchangeService_AddOfferedBook_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ExchangeServiceServer).AddOfferedBook(ctx, req.(*BookOpRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ExchangeService_RemoveOfferedBook_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(BookOpRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ExchangeServiceServer).RemoveOfferedBook(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ExchangeService_RemoveOfferedBook_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ExchangeServiceServer).RemoveOfferedBook(ctx, req.(*BookOpRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ExchangeService_ListAllOffers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ExchangeServiceServer).ListAllOffers(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ExchangeService_ListAllOffers_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ExchangeServiceServer).ListAllOffers(ctx, req.(*Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ExchangeService_ListOffersByStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(StatusRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ExchangeServiceServer).ListOffersByStatus(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ExchangeService_ListOffersByStatus_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ExchangeServiceServer).ListOffersByStatus(ctx, req.(*StatusRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ExchangeService_ServiceDesc is the grpc.ServiceDesc for ExchangeService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -342,6 +512,26 @@ var ExchangeService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteOffer",
 			Handler:    _ExchangeService_DeleteOffer_Handler,
+		},
+		{
+			MethodName: "UpdateOffer",
+			Handler:    _ExchangeService_UpdateOffer_Handler,
+		},
+		{
+			MethodName: "AddOfferedBook",
+			Handler:    _ExchangeService_AddOfferedBook_Handler,
+		},
+		{
+			MethodName: "RemoveOfferedBook",
+			Handler:    _ExchangeService_RemoveOfferedBook_Handler,
+		},
+		{
+			MethodName: "ListAllOffers",
+			Handler:    _ExchangeService_ListAllOffers_Handler,
+		},
+		{
+			MethodName: "ListOffersByStatus",
+			Handler:    _ExchangeService_ListOffersByStatus_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

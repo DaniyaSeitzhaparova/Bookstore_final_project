@@ -40,28 +40,15 @@ func (h *ExchangeHandler) CreateOffer(ctx context.Context, req *exchangepb.Creat
 		return nil, status.Error(codes.InvalidArgument, "invalid counterparty_id")
 	}
 
-	var offeredOIDs, requestedOIDs []primitive.ObjectID
-	for _, id := range req.OfferedBookIds {
-		oid, err := primitive.ObjectIDFromHex(id)
-		if err != nil {
-			return nil, status.Errorf(codes.InvalidArgument, "invalid offered_book_id %q", id)
-		}
-		offeredOIDs = append(offeredOIDs, oid)
-	}
-	for _, id := range req.RequestedBookIds {
-		oid, err := primitive.ObjectIDFromHex(id)
-		if err != nil {
-			return nil, status.Errorf(codes.InvalidArgument, "invalid requested_book_id %q", id)
-		}
-		requestedOIDs = append(requestedOIDs, oid)
-	}
+	offered := toObjectIDs(req.OfferedBookIds)
+	requested := toObjectIDs(req.RequestedBookIds)
 
 	now := primitive.NewDateTimeFromTime(time.Now())
 	offer := &domain.ExchangeOffer{
 		OwnerID:          ownerOID,
 		CounterpartyID:   cpOID,
-		OfferedBookIDs:   offeredOIDs,
-		RequestedBookIDs: requestedOIDs,
+		OfferedBookIDs:   offered,
+		RequestedBookIDs: requested,
 		Status:           "PENDING",
 		CreatedAt:        now,
 		UpdatedAt:        now,
@@ -73,38 +60,13 @@ func (h *ExchangeHandler) CreateOffer(ctx context.Context, req *exchangepb.Creat
 	}
 
 	evt := struct {
-		OfferID        string `json:"offer_id"`
-		OwnerID        string `json:"owner_id"`
-		CounterpartyID string `json:"counterparty_id"`
-	}{
-		OfferID:        created.ID.Hex(),
-		OwnerID:        created.OwnerID.Hex(),
-		CounterpartyID: created.CounterpartyID.Hex(),
-	}
+		OfferID string `json:"offer_id"`
+	}{OfferID: created.ID.Hex()}
 	if data, _ := json.Marshal(evt); data != nil {
-		h.nc.Publish("exchange.offered", data)
+		h.nc.Publish("exchange.created", data)
 	}
 
-	toHexs := func(ids []primitive.ObjectID) []string {
-		res := make([]string, len(ids))
-		for i, x := range ids {
-			res[i] = x.Hex()
-		}
-		return res
-	}
-
-	return &exchangepb.OfferResponse{
-		Offer: &exchangepb.ExchangeOffer{
-			Id:               created.ID.Hex(),
-			OwnerId:          created.OwnerID.Hex(),
-			CounterpartyId:   created.CounterpartyID.Hex(),
-			OfferedBookIds:   toHexs(created.OfferedBookIDs),
-			RequestedBookIds: toHexs(created.RequestedBookIDs),
-			Status:           created.Status,
-			CreatedAt:        created.CreatedAt.Time().String(),
-			UpdatedAt:        created.UpdatedAt.Time().String(),
-		},
-	}, nil
+	return &exchangepb.OfferResponse{Offer: mapDomain(created)}, nil
 }
 
 func (h *ExchangeHandler) GetOffer(ctx context.Context, req *exchangepb.OfferID) (*exchangepb.OfferResponse, error) {
@@ -115,27 +77,7 @@ func (h *ExchangeHandler) GetOffer(ctx context.Context, req *exchangepb.OfferID)
 	if err != nil {
 		return nil, status.Errorf(codes.NotFound, "offer not found: %v", err)
 	}
-
-	toHexs := func(ids []primitive.ObjectID) []string {
-		res := make([]string, len(ids))
-		for i, x := range ids {
-			res[i] = x.Hex()
-		}
-		return res
-	}
-
-	return &exchangepb.OfferResponse{
-		Offer: &exchangepb.ExchangeOffer{
-			Id:               offer.ID.Hex(),
-			OwnerId:          offer.OwnerID.Hex(),
-			CounterpartyId:   offer.CounterpartyID.Hex(),
-			OfferedBookIds:   toHexs(offer.OfferedBookIDs),
-			RequestedBookIds: toHexs(offer.RequestedBookIDs),
-			Status:           offer.Status,
-			CreatedAt:        offer.CreatedAt.Time().String(),
-			UpdatedAt:        offer.UpdatedAt.Time().String(),
-		},
-	}, nil
+	return &exchangepb.OfferResponse{Offer: mapDomain(offer)}, nil
 }
 
 func (h *ExchangeHandler) ListOffersByUser(ctx context.Context, req *exchangepb.UserID) (*exchangepb.OfferList, error) {
@@ -146,22 +88,7 @@ func (h *ExchangeHandler) ListOffersByUser(ctx context.Context, req *exchangepb.
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "cannot list offers: %v", err)
 	}
-
-	var list []*exchangepb.ExchangeOffer
-	for _, offer := range offers {
-		list = append(list, &exchangepb.ExchangeOffer{
-			Id:               offer.ID.Hex(),
-			OwnerId:          offer.OwnerID.Hex(),
-			CounterpartyId:   offer.CounterpartyID.Hex(),
-			OfferedBookIds:   toHexs(offer.OfferedBookIDs),
-			RequestedBookIds: toHexs(offer.RequestedBookIDs),
-			Status:           offer.Status,
-			CreatedAt:        offer.CreatedAt.Time().String(),
-			UpdatedAt:        offer.UpdatedAt.Time().String(),
-		})
-	}
-
-	return &exchangepb.OfferList{Offers: list}, nil
+	return &exchangepb.OfferList{Offers: mapDomainList(offers)}, nil
 }
 
 func (h *ExchangeHandler) ListPendingOffers(ctx context.Context, _ *exchangepb.Empty) (*exchangepb.OfferList, error) {
@@ -169,122 +96,152 @@ func (h *ExchangeHandler) ListPendingOffers(ctx context.Context, _ *exchangepb.E
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "cannot list pending offers: %v", err)
 	}
-
-	var list []*exchangepb.ExchangeOffer
-	for _, offer := range offers {
-		list = append(list, &exchangepb.ExchangeOffer{
-			Id:               offer.ID.Hex(),
-			OwnerId:          offer.OwnerID.Hex(),
-			CounterpartyId:   offer.CounterpartyID.Hex(),
-			OfferedBookIds:   toHexs(offer.OfferedBookIDs),
-			RequestedBookIds: toHexs(offer.RequestedBookIDs),
-			Status:           offer.Status,
-			CreatedAt:        offer.CreatedAt.Time().String(),
-			UpdatedAt:        offer.UpdatedAt.Time().String(),
-		})
-	}
-
-	return &exchangepb.OfferList{Offers: list}, nil
+	return &exchangepb.OfferList{Offers: mapDomainList(offers)}, nil
 }
 
 func (h *ExchangeHandler) AcceptOffer(ctx context.Context, req *exchangepb.AcceptOfferRequest) (*exchangepb.OfferResponse, error) {
 	if req == nil || req.OfferId == "" || req.RequesterId == "" {
 		return nil, status.Error(codes.InvalidArgument, "offer_id and requester_id are required")
 	}
-
 	offer, err := h.uc.AcceptOffer(ctx, req.OfferId, req.RequesterId)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "cannot accept offer: %v", err)
 	}
-
-	evt := struct {
-		OfferID     string `json:"offer_id"`
-		OwnerID     string `json:"owner_id"`
-		RequesterID string `json:"requester_id"`
-	}{
-		OfferID:     offer.ID.Hex(),
-		OwnerID:     offer.OwnerID.Hex(),
-		RequesterID: req.RequesterId,
-	}
-	if data, _ := json.Marshal(evt); data != nil {
-		h.nc.Publish("exchange.accepted", data)
-	}
-
-	return &exchangepb.OfferResponse{
-		Offer: &exchangepb.ExchangeOffer{
-			Id:               offer.ID.Hex(),
-			OwnerId:          offer.OwnerID.Hex(),
-			CounterpartyId:   offer.CounterpartyID.Hex(),
-			OfferedBookIds:   toHexs(offer.OfferedBookIDs),
-			RequestedBookIds: toHexs(offer.RequestedBookIDs),
-			Status:           offer.Status,
-			CreatedAt:        offer.CreatedAt.Time().String(),
-			UpdatedAt:        offer.UpdatedAt.Time().String(),
-		},
-	}, nil
+	return &exchangepb.OfferResponse{Offer: mapDomain(offer)}, nil
 }
 
 func (h *ExchangeHandler) DeclineOffer(ctx context.Context, req *exchangepb.OfferID) (*exchangepb.OfferResponse, error) {
 	if req == nil || req.Id == "" {
 		return nil, status.Error(codes.InvalidArgument, "offer id is required")
 	}
-	o, err := h.uc.DeclineOffer(ctx, req.Id)
+	offer, err := h.uc.DeclineOffer(ctx, req.Id)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "cannot decline offer: %v", err)
 	}
-
-	evt := struct {
-		OfferID string `json:"offer_id"`
-		OwnerID string `json:"owner_id"`
-	}{
-		OfferID: o.ID.Hex(),
-		OwnerID: o.OwnerID.Hex(),
-	}
-	if data, _ := json.Marshal(evt); data != nil {
-		h.nc.Publish("exchange.declined", data)
-	}
-
-	return &exchangepb.OfferResponse{
-		Offer: &exchangepb.ExchangeOffer{
-			Id:               o.ID.Hex(),
-			OwnerId:          o.OwnerID.Hex(),
-			CounterpartyId:   o.CounterpartyID.Hex(),
-			OfferedBookIds:   toHexs(o.OfferedBookIDs),
-			RequestedBookIds: toHexs(o.RequestedBookIDs),
-			Status:           o.Status,
-			CreatedAt:        o.CreatedAt.Time().String(),
-			UpdatedAt:        o.UpdatedAt.Time().String(),
-		},
-	}, nil
+	return &exchangepb.OfferResponse{Offer: mapDomain(offer)}, nil
 }
 
 func (h *ExchangeHandler) DeleteOffer(ctx context.Context, req *exchangepb.OfferID) (*exchangepb.Empty, error) {
 	if req == nil || req.Id == "" {
 		return nil, status.Error(codes.InvalidArgument, "offer id is required")
 	}
-	o, _ := h.uc.GetOfferByID(ctx, req.Id)
 	if err := h.uc.DeleteOffer(ctx, req.Id); err != nil {
 		return nil, status.Errorf(codes.Internal, "cannot delete offer: %v", err)
 	}
-
-	evt := struct {
-		OfferID string `json:"offer_id"`
-		OwnerID string `json:"owner_id"`
-	}{
-		OfferID: req.Id,
-		OwnerID: o.OwnerID.Hex(),
-	}
-	if data, _ := json.Marshal(evt); data != nil {
-		h.nc.Publish("exchange.deleted", data)
-	}
-
 	return &exchangepb.Empty{}, nil
 }
 
+func (h *ExchangeHandler) UpdateOffer(ctx context.Context, req *exchangepb.UpdateOfferRequest) (*exchangepb.OfferResponse, error) {
+	if req == nil || req.Offer == nil || req.Offer.Id == "" {
+		return nil, status.Error(codes.InvalidArgument, "offer with id is required")
+	}
+
+	oid, err := primitive.ObjectIDFromHex(req.Offer.Id)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid offer id")
+	}
+	ownerOID, err := primitive.ObjectIDFromHex(req.Offer.OwnerId)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid owner_id")
+	}
+	cpOID, err := primitive.ObjectIDFromHex(req.Offer.CounterpartyId)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid counterparty_id")
+	}
+
+	dom := &domain.ExchangeOffer{
+		ID:               oid,
+		OwnerID:          ownerOID,
+		CounterpartyID:   cpOID,
+		OfferedBookIDs:   toObjectIDs(req.Offer.OfferedBookIds),
+		RequestedBookIDs: toObjectIDs(req.Offer.RequestedBookIds),
+		Status:           req.Offer.Status,
+		UpdatedAt:        primitive.NewDateTimeFromTime(time.Now()),
+	}
+
+	updated, err := h.uc.UpdateOffer(ctx, dom)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "cannot update offer: %v", err)
+	}
+	return &exchangepb.OfferResponse{Offer: mapDomain(updated)}, nil
+}
+
+func (h *ExchangeHandler) AddOfferedBook(ctx context.Context, req *exchangepb.BookOpRequest) (*exchangepb.OfferResponse, error) {
+	if req == nil || req.OfferId == "" || req.BookId == "" {
+		return nil, status.Error(codes.InvalidArgument, "offer_id and book_id are required")
+	}
+	offer, err := h.uc.AddOfferedBook(ctx, req.OfferId, req.BookId)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "cannot add offered book: %v", err)
+	}
+	return &exchangepb.OfferResponse{Offer: mapDomain(offer)}, nil
+}
+
+func (h *ExchangeHandler) RemoveOfferedBook(ctx context.Context, req *exchangepb.BookOpRequest) (*exchangepb.OfferResponse, error) {
+	if req == nil || req.OfferId == "" || req.BookId == "" {
+		return nil, status.Error(codes.InvalidArgument, "offer_id and book_id are required")
+	}
+	offer, err := h.uc.RemoveOfferedBook(ctx, req.OfferId, req.BookId)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "cannot remove offered book: %v", err)
+	}
+	return &exchangepb.OfferResponse{Offer: mapDomain(offer)}, nil
+}
+
+func (h *ExchangeHandler) ListAllOffers(ctx context.Context, _ *exchangepb.Empty) (*exchangepb.OfferList, error) {
+	offers, err := h.uc.ListAllOffers(ctx)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "cannot list all offers: %v", err)
+	}
+	return &exchangepb.OfferList{Offers: mapDomainList(offers)}, nil
+}
+
+func (h *ExchangeHandler) ListOffersByStatus(ctx context.Context, req *exchangepb.StatusRequest) (*exchangepb.OfferList, error) {
+	if req == nil || req.Status == "" {
+		return nil, status.Error(codes.InvalidArgument, "status is required")
+	}
+	offers, err := h.uc.ListOffersByStatus(ctx, req.Status)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "cannot list offers by status: %v", err)
+	}
+	return &exchangepb.OfferList{Offers: mapDomainList(offers)}, nil
+}
+
+func mapDomain(o *domain.ExchangeOffer) *exchangepb.ExchangeOffer {
+	return &exchangepb.ExchangeOffer{
+		Id:               o.ID.Hex(),
+		OwnerId:          o.OwnerID.Hex(),
+		CounterpartyId:   o.CounterpartyID.Hex(),
+		OfferedBookIds:   toHexs(o.OfferedBookIDs),
+		RequestedBookIds: toHexs(o.RequestedBookIDs),
+		Status:           o.Status,
+		CreatedAt:        o.CreatedAt.Time().String(),
+		UpdatedAt:        o.UpdatedAt.Time().String(),
+	}
+}
+
+func mapDomainList(list []*domain.ExchangeOffer) []*exchangepb.ExchangeOffer {
+	out := make([]*exchangepb.ExchangeOffer, len(list))
+	for i, e := range list {
+		out[i] = mapDomain(e)
+	}
+	return out
+}
+
 func toHexs(ids []primitive.ObjectID) []string {
-	out := make([]string, len(ids))
-	for i, v := range ids {
-		out[i] = v.Hex()
+	res := make([]string, len(ids))
+	for i, id := range ids {
+		res[i] = id.Hex()
+	}
+	return res
+}
+
+func toObjectIDs(strs []string) []primitive.ObjectID {
+	out := make([]primitive.ObjectID, len(strs))
+	for i, s := range strs {
+		if oid, err := primitive.ObjectIDFromHex(s); err == nil {
+			out[i] = oid
+		}
 	}
 	return out
 }

@@ -88,5 +88,41 @@ func SubscribeAll(nc *nats.Conn, notifier *usecase.Notifier) error {
 		return err
 	}
 
+	if _, err := nc.Subscribe("userlibrary.book.assigned", func(m *nats.Msg) {
+		var evt domain.BookAssignedEvent
+		if err := json.Unmarshal(m.Data, &evt); err == nil {
+			notifier.SendBookAssigned(context.Background(), evt)
+		}
+	}); err != nil {
+		return err
+	}
+
+	if _, err := nc.Subscribe("userlibrary.book.unassigned", func(m *nats.Msg) {
+		var evt domain.BookUnassignedEvent
+		if err := json.Unmarshal(m.Data, &evt); err == nil {
+			notifier.SendBookUnassigned(context.Background(), evt)
+		}
+	}); err != nil {
+		return err
+	}
+
+	if _, err := nc.Subscribe("userlibrary.entry.deleted", func(m *nats.Msg) {
+		var evt domain.EntryDeletedEvent
+		if err := json.Unmarshal(m.Data, &evt); err == nil {
+			notifier.SendEntryDeleted(context.Background(), evt)
+		}
+	}); err != nil {
+		return err
+	}
+
+	if _, err := nc.Subscribe("userlibrary.entry.updated", func(m *nats.Msg) {
+		var evt domain.EntryUpdatedEvent
+		if err := json.Unmarshal(m.Data, &evt); err == nil {
+			notifier.SendEntryUpdated(context.Background(), evt)
+		}
+	}); err != nil {
+		return err
+	}
+
 	return nil
 }

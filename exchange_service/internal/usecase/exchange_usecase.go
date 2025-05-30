@@ -2,7 +2,6 @@ package usecase
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/OshakbayAigerim/read_space/exchange_service/internal/cache"
 	"github.com/OshakbayAigerim/read_space/exchange_service/internal/domain"
@@ -18,6 +17,12 @@ type ExchangeUseCase interface {
 	AcceptOffer(ctx context.Context, offerID, requesterID string) (*domain.ExchangeOffer, error)
 	DeclineOffer(ctx context.Context, id string) (*domain.ExchangeOffer, error)
 	DeleteOffer(ctx context.Context, id string) error
+
+	UpdateOffer(ctx context.Context, offer *domain.ExchangeOffer) (*domain.ExchangeOffer, error)
+	AddOfferedBook(ctx context.Context, offerID, bookID string) (*domain.ExchangeOffer, error)
+	RemoveOfferedBook(ctx context.Context, offerID, bookID string) (*domain.ExchangeOffer, error)
+	ListAllOffers(ctx context.Context) ([]*domain.ExchangeOffer, error)
+	ListOffersByStatus(ctx context.Context, status string) ([]*domain.ExchangeOffer, error)
 }
 
 type exchangeUseCase struct {
@@ -43,8 +48,8 @@ func (u *exchangeUseCase) CreateOffer(ctx context.Context, offer *domain.Exchang
 	if err != nil {
 		return nil, err
 	}
-	_ = u.cache.InvalidatePending(ctx)
-	_ = u.cache.InvalidateUser(ctx, offer.OwnerID.Hex())
+	u.cache.InvalidatePending(ctx)
+	u.cache.InvalidateUser(ctx, offer.OwnerID.Hex())
 	return created, nil
 }
 
@@ -65,45 +70,9 @@ func (u *exchangeUseCase) AcceptOffer(ctx context.Context, offerID, requesterID 
 	if err != nil {
 		return nil, err
 	}
-
-	for _, bID := range offer.OfferedBookIDs {
-		if _, err := u.libClient.UnassignBook(ctx, &userlibpb.UnassignBookRequest{
-			UserId: offer.OwnerID.Hex(),
-			BookId: bID.Hex(),
-		}); err != nil {
-			u.repo.DeclineOffer(ctx, offerID)
-			return nil, fmt.Errorf("unassign offered book %s: %w", bID.Hex(), err)
-		}
-		if _, err := u.libClient.AssignBook(ctx, &userlibpb.AssignBookRequest{
-			UserId: requesterID,
-			BookId: bID.Hex(),
-		}); err != nil {
-			u.repo.DeclineOffer(ctx, offerID)
-			return nil, fmt.Errorf("assign offered book %s: %w", bID.Hex(), err)
-		}
-	}
-
-	for _, bID := range offer.RequestedBookIDs {
-		if _, err := u.libClient.UnassignBook(ctx, &userlibpb.UnassignBookRequest{
-			UserId: requesterID,
-			BookId: bID.Hex(),
-		}); err != nil {
-			u.repo.DeclineOffer(ctx, offerID)
-			return nil, fmt.Errorf("unassign requested book %s: %w", bID.Hex(), err)
-		}
-		if _, err := u.libClient.AssignBook(ctx, &userlibpb.AssignBookRequest{
-			UserId: offer.OwnerID.Hex(),
-			BookId: bID.Hex(),
-		}); err != nil {
-			u.repo.DeclineOffer(ctx, offerID)
-			return nil, fmt.Errorf("assign requested book %s: %w", bID.Hex(), err)
-		}
-	}
-
-	_ = u.cache.InvalidatePending(ctx)
-	_ = u.cache.InvalidateUser(ctx, offer.OwnerID.Hex())
-	_ = u.cache.InvalidateUser(ctx, requesterID)
-
+	u.cache.InvalidatePending(ctx)
+	u.cache.InvalidateUser(ctx, offer.OwnerID.Hex())
+	u.cache.InvalidateUser(ctx, requesterID)
 	return offer, nil
 }
 
@@ -112,8 +81,8 @@ func (u *exchangeUseCase) DeclineOffer(ctx context.Context, id string) (*domain.
 	if err != nil {
 		return nil, err
 	}
-	_ = u.cache.InvalidatePending(ctx)
-	_ = u.cache.InvalidateUser(ctx, o.OwnerID.Hex())
+	u.cache.InvalidatePending(ctx)
+	u.cache.InvalidateUser(ctx, o.OwnerID.Hex())
 	return o, nil
 }
 
@@ -125,7 +94,45 @@ func (u *exchangeUseCase) DeleteOffer(ctx context.Context, id string) error {
 	if err := u.repo.DeleteOffer(ctx, id); err != nil {
 		return err
 	}
-	_ = u.cache.InvalidatePending(ctx)
-	_ = u.cache.InvalidateUser(ctx, o.OwnerID.Hex())
+	u.cache.InvalidatePending(ctx)
+	u.cache.InvalidateUser(ctx, o.OwnerID.Hex())
 	return nil
+}
+
+func (u *exchangeUseCase) UpdateOffer(ctx context.Context, offer *domain.ExchangeOffer) (*domain.ExchangeOffer, error) {
+	updated, err := u.repo.UpdateOffer(ctx, offer)
+	if err != nil {
+		return nil, err
+	}
+	u.cache.InvalidatePending(ctx)
+	u.cache.InvalidateUser(ctx, offer.OwnerID.Hex())
+	return updated, nil
+}
+
+func (u *exchangeUseCase) AddOfferedBook(ctx context.Context, offerID, bookID string) (*domain.ExchangeOffer, error) {
+	updated, err := u.repo.AddOfferedBook(ctx, offerID, bookID)
+	if err != nil {
+		return nil, err
+	}
+	u.cache.InvalidatePending(ctx)
+	u.cache.InvalidateUser(ctx, updated.OwnerID.Hex())
+	return updated, nil
+}
+
+func (u *exchangeUseCase) RemoveOfferedBook(ctx context.Context, offerID, bookID string) (*domain.ExchangeOffer, error) {
+	updated, err := u.repo.RemoveOfferedBook(ctx, offerID, bookID)
+	if err != nil {
+		return nil, err
+	}
+	u.cache.InvalidatePending(ctx)
+	u.cache.InvalidateUser(ctx, updated.OwnerID.Hex())
+	return updated, nil
+}
+
+func (u *exchangeUseCase) ListAllOffers(ctx context.Context) ([]*domain.ExchangeOffer, error) {
+	return u.repo.ListAllOffers(ctx)
+}
+
+func (u *exchangeUseCase) ListOffersByStatus(ctx context.Context, status string) ([]*domain.ExchangeOffer, error) {
+	return u.repo.ListOffersByStatus(ctx, status)
 }

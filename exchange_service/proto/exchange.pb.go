@@ -21,15 +21,14 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// Оффер на обмен книги
 type ExchangeOffer struct {
 	state            protoimpl.MessageState `protogen:"open.v1"`
 	Id               string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	OwnerId          string                 `protobuf:"bytes,2,opt,name=owner_id,json=ownerId,proto3" json:"owner_id,omitempty"`                      // тот, кто создал оффер
-	CounterpartyId   string                 `protobuf:"bytes,3,opt,name=counterparty_id,json=counterpartyId,proto3" json:"counterparty_id,omitempty"` // с кем хотят обменяться
+	OwnerId          string                 `protobuf:"bytes,2,opt,name=owner_id,json=ownerId,proto3" json:"owner_id,omitempty"`
+	CounterpartyId   string                 `protobuf:"bytes,3,opt,name=counterparty_id,json=counterpartyId,proto3" json:"counterparty_id,omitempty"`
 	OfferedBookIds   []string               `protobuf:"bytes,4,rep,name=offered_book_ids,json=offeredBookIds,proto3" json:"offered_book_ids,omitempty"`
 	RequestedBookIds []string               `protobuf:"bytes,5,rep,name=requested_book_ids,json=requestedBookIds,proto3" json:"requested_book_ids,omitempty"`
-	Status           string                 `protobuf:"bytes,6,opt,name=status,proto3" json:"status,omitempty"` // PENDING, ACCEPTED, DECLINED
+	Status           string                 `protobuf:"bytes,6,opt,name=status,proto3" json:"status,omitempty"`
 	CreatedAt        string                 `protobuf:"bytes,7,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	UpdatedAt        string                 `protobuf:"bytes,8,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
 	unknownFields    protoimpl.UnknownFields
@@ -124,8 +123,8 @@ func (x *ExchangeOffer) GetUpdatedAt() string {
 
 type CreateOfferRequest struct {
 	state            protoimpl.MessageState `protogen:"open.v1"`
-	OwnerId          string                 `protobuf:"bytes,1,opt,name=owner_id,json=ownerId,proto3" json:"owner_id,omitempty"`                      // тот, кто создаёт оффер
-	CounterpartyId   string                 `protobuf:"bytes,2,opt,name=counterparty_id,json=counterpartyId,proto3" json:"counterparty_id,omitempty"` // с кем хотят обменяться
+	OwnerId          string                 `protobuf:"bytes,1,opt,name=owner_id,json=ownerId,proto3" json:"owner_id,omitempty"`
+	CounterpartyId   string                 `protobuf:"bytes,2,opt,name=counterparty_id,json=counterpartyId,proto3" json:"counterparty_id,omitempty"`
 	OfferedBookIds   []string               `protobuf:"bytes,3,rep,name=offered_book_ids,json=offeredBookIds,proto3" json:"offered_book_ids,omitempty"`
 	RequestedBookIds []string               `protobuf:"bytes,4,rep,name=requested_book_ids,json=requestedBookIds,proto3" json:"requested_book_ids,omitempty"`
 	unknownFields    protoimpl.UnknownFields
@@ -190,6 +189,198 @@ func (x *CreateOfferRequest) GetRequestedBookIds() []string {
 	return nil
 }
 
+type AcceptOfferRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	OfferId       string                 `protobuf:"bytes,1,opt,name=offer_id,json=offerId,proto3" json:"offer_id,omitempty"`
+	RequesterId   string                 `protobuf:"bytes,2,opt,name=requester_id,json=requesterId,proto3" json:"requester_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AcceptOfferRequest) Reset() {
+	*x = AcceptOfferRequest{}
+	mi := &file_exchange_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AcceptOfferRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AcceptOfferRequest) ProtoMessage() {}
+
+func (x *AcceptOfferRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_exchange_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AcceptOfferRequest.ProtoReflect.Descriptor instead.
+func (*AcceptOfferRequest) Descriptor() ([]byte, []int) {
+	return file_exchange_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *AcceptOfferRequest) GetOfferId() string {
+	if x != nil {
+		return x.OfferId
+	}
+	return ""
+}
+
+func (x *AcceptOfferRequest) GetRequesterId() string {
+	if x != nil {
+		return x.RequesterId
+	}
+	return ""
+}
+
+type UpdateOfferRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Offer         *ExchangeOffer         `protobuf:"bytes,1,opt,name=offer,proto3" json:"offer,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateOfferRequest) Reset() {
+	*x = UpdateOfferRequest{}
+	mi := &file_exchange_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateOfferRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateOfferRequest) ProtoMessage() {}
+
+func (x *UpdateOfferRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_exchange_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateOfferRequest.ProtoReflect.Descriptor instead.
+func (*UpdateOfferRequest) Descriptor() ([]byte, []int) {
+	return file_exchange_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *UpdateOfferRequest) GetOffer() *ExchangeOffer {
+	if x != nil {
+		return x.Offer
+	}
+	return nil
+}
+
+type BookOpRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	OfferId       string                 `protobuf:"bytes,1,opt,name=offer_id,json=offerId,proto3" json:"offer_id,omitempty"`
+	BookId        string                 `protobuf:"bytes,2,opt,name=book_id,json=bookId,proto3" json:"book_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *BookOpRequest) Reset() {
+	*x = BookOpRequest{}
+	mi := &file_exchange_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *BookOpRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BookOpRequest) ProtoMessage() {}
+
+func (x *BookOpRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_exchange_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BookOpRequest.ProtoReflect.Descriptor instead.
+func (*BookOpRequest) Descriptor() ([]byte, []int) {
+	return file_exchange_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *BookOpRequest) GetOfferId() string {
+	if x != nil {
+		return x.OfferId
+	}
+	return ""
+}
+
+func (x *BookOpRequest) GetBookId() string {
+	if x != nil {
+		return x.BookId
+	}
+	return ""
+}
+
+type StatusRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Status        string                 `protobuf:"bytes,1,opt,name=status,proto3" json:"status,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *StatusRequest) Reset() {
+	*x = StatusRequest{}
+	mi := &file_exchange_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *StatusRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*StatusRequest) ProtoMessage() {}
+
+func (x *StatusRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_exchange_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use StatusRequest.ProtoReflect.Descriptor instead.
+func (*StatusRequest) Descriptor() ([]byte, []int) {
+	return file_exchange_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *StatusRequest) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
 type OfferID struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -199,7 +390,7 @@ type OfferID struct {
 
 func (x *OfferID) Reset() {
 	*x = OfferID{}
-	mi := &file_exchange_proto_msgTypes[2]
+	mi := &file_exchange_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -211,7 +402,7 @@ func (x *OfferID) String() string {
 func (*OfferID) ProtoMessage() {}
 
 func (x *OfferID) ProtoReflect() protoreflect.Message {
-	mi := &file_exchange_proto_msgTypes[2]
+	mi := &file_exchange_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -224,12 +415,56 @@ func (x *OfferID) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use OfferID.ProtoReflect.Descriptor instead.
 func (*OfferID) Descriptor() ([]byte, []int) {
-	return file_exchange_proto_rawDescGZIP(), []int{2}
+	return file_exchange_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *OfferID) GetId() string {
 	if x != nil {
 		return x.Id
+	}
+	return ""
+}
+
+type UserID struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UserID) Reset() {
+	*x = UserID{}
+	mi := &file_exchange_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UserID) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UserID) ProtoMessage() {}
+
+func (x *UserID) ProtoReflect() protoreflect.Message {
+	mi := &file_exchange_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UserID.ProtoReflect.Descriptor instead.
+func (*UserID) Descriptor() ([]byte, []int) {
+	return file_exchange_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *UserID) GetUserId() string {
+	if x != nil {
+		return x.UserId
 	}
 	return ""
 }
@@ -243,7 +478,7 @@ type OfferResponse struct {
 
 func (x *OfferResponse) Reset() {
 	*x = OfferResponse{}
-	mi := &file_exchange_proto_msgTypes[3]
+	mi := &file_exchange_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -255,7 +490,7 @@ func (x *OfferResponse) String() string {
 func (*OfferResponse) ProtoMessage() {}
 
 func (x *OfferResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_exchange_proto_msgTypes[3]
+	mi := &file_exchange_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -268,7 +503,7 @@ func (x *OfferResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use OfferResponse.ProtoReflect.Descriptor instead.
 func (*OfferResponse) Descriptor() ([]byte, []int) {
-	return file_exchange_proto_rawDescGZIP(), []int{3}
+	return file_exchange_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *OfferResponse) GetOffer() *ExchangeOffer {
@@ -287,7 +522,7 @@ type OfferList struct {
 
 func (x *OfferList) Reset() {
 	*x = OfferList{}
-	mi := &file_exchange_proto_msgTypes[4]
+	mi := &file_exchange_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -299,7 +534,7 @@ func (x *OfferList) String() string {
 func (*OfferList) ProtoMessage() {}
 
 func (x *OfferList) ProtoReflect() protoreflect.Message {
-	mi := &file_exchange_proto_msgTypes[4]
+	mi := &file_exchange_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -312,7 +547,7 @@ func (x *OfferList) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use OfferList.ProtoReflect.Descriptor instead.
 func (*OfferList) Descriptor() ([]byte, []int) {
-	return file_exchange_proto_rawDescGZIP(), []int{4}
+	return file_exchange_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *OfferList) GetOffers() []*ExchangeOffer {
@@ -320,50 +555,6 @@ func (x *OfferList) GetOffers() []*ExchangeOffer {
 		return x.Offers
 	}
 	return nil
-}
-
-type UserID struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *UserID) Reset() {
-	*x = UserID{}
-	mi := &file_exchange_proto_msgTypes[5]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *UserID) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*UserID) ProtoMessage() {}
-
-func (x *UserID) ProtoReflect() protoreflect.Message {
-	mi := &file_exchange_proto_msgTypes[5]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use UserID.ProtoReflect.Descriptor instead.
-func (*UserID) Descriptor() ([]byte, []int) {
-	return file_exchange_proto_rawDescGZIP(), []int{5}
-}
-
-func (x *UserID) GetUserId() string {
-	if x != nil {
-		return x.UserId
-	}
-	return ""
 }
 
 type Empty struct {
@@ -374,7 +565,7 @@ type Empty struct {
 
 func (x *Empty) Reset() {
 	*x = Empty{}
-	mi := &file_exchange_proto_msgTypes[6]
+	mi := &file_exchange_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -386,7 +577,7 @@ func (x *Empty) String() string {
 func (*Empty) ProtoMessage() {}
 
 func (x *Empty) ProtoReflect() protoreflect.Message {
-	mi := &file_exchange_proto_msgTypes[6]
+	mi := &file_exchange_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -399,60 +590,7 @@ func (x *Empty) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Empty.ProtoReflect.Descriptor instead.
 func (*Empty) Descriptor() ([]byte, []int) {
-	return file_exchange_proto_rawDescGZIP(), []int{6}
-}
-
-// Новый запрос для принятия оффера
-type AcceptOfferRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	OfferId       string                 `protobuf:"bytes,1,opt,name=offer_id,json=offerId,proto3" json:"offer_id,omitempty"`             // ID оффера
-	RequesterId   string                 `protobuf:"bytes,2,opt,name=requester_id,json=requesterId,proto3" json:"requester_id,omitempty"` // подтверждающий (тот же, что counterparty_id)
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *AcceptOfferRequest) Reset() {
-	*x = AcceptOfferRequest{}
-	mi := &file_exchange_proto_msgTypes[7]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *AcceptOfferRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*AcceptOfferRequest) ProtoMessage() {}
-
-func (x *AcceptOfferRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_exchange_proto_msgTypes[7]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use AcceptOfferRequest.ProtoReflect.Descriptor instead.
-func (*AcceptOfferRequest) Descriptor() ([]byte, []int) {
-	return file_exchange_proto_rawDescGZIP(), []int{7}
-}
-
-func (x *AcceptOfferRequest) GetOfferId() string {
-	if x != nil {
-		return x.OfferId
-	}
-	return ""
-}
-
-func (x *AcceptOfferRequest) GetRequesterId() string {
-	if x != nil {
-		return x.RequesterId
-	}
-	return ""
+	return file_exchange_proto_rawDescGZIP(), []int{10}
 }
 
 var File_exchange_proto protoreflect.FileDescriptor
@@ -475,19 +613,26 @@ const file_exchange_proto_rawDesc = "" +
 	"\bowner_id\x18\x01 \x01(\tR\aownerId\x12'\n" +
 	"\x0fcounterparty_id\x18\x02 \x01(\tR\x0ecounterpartyId\x12(\n" +
 	"\x10offered_book_ids\x18\x03 \x03(\tR\x0eofferedBookIds\x12,\n" +
-	"\x12requested_book_ids\x18\x04 \x03(\tR\x10requestedBookIds\"\x19\n" +
+	"\x12requested_book_ids\x18\x04 \x03(\tR\x10requestedBookIds\"R\n" +
+	"\x12AcceptOfferRequest\x12\x19\n" +
+	"\boffer_id\x18\x01 \x01(\tR\aofferId\x12!\n" +
+	"\frequester_id\x18\x02 \x01(\tR\vrequesterId\"C\n" +
+	"\x12UpdateOfferRequest\x12-\n" +
+	"\x05offer\x18\x01 \x01(\v2\x17.exchange.ExchangeOfferR\x05offer\"C\n" +
+	"\rBookOpRequest\x12\x19\n" +
+	"\boffer_id\x18\x01 \x01(\tR\aofferId\x12\x17\n" +
+	"\abook_id\x18\x02 \x01(\tR\x06bookId\"'\n" +
+	"\rStatusRequest\x12\x16\n" +
+	"\x06status\x18\x01 \x01(\tR\x06status\"\x19\n" +
 	"\aOfferID\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\">\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"!\n" +
+	"\x06UserID\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\">\n" +
 	"\rOfferResponse\x12-\n" +
 	"\x05offer\x18\x01 \x01(\v2\x17.exchange.ExchangeOfferR\x05offer\"<\n" +
 	"\tOfferList\x12/\n" +
-	"\x06offers\x18\x01 \x03(\v2\x17.exchange.ExchangeOfferR\x06offers\"!\n" +
-	"\x06UserID\x12\x17\n" +
-	"\auser_id\x18\x01 \x01(\tR\x06userId\"\a\n" +
-	"\x05Empty\"R\n" +
-	"\x12AcceptOfferRequest\x12\x19\n" +
-	"\boffer_id\x18\x01 \x01(\tR\aofferId\x12!\n" +
-	"\frequester_id\x18\x02 \x01(\tR\vrequesterId2\xba\x03\n" +
+	"\x06offers\x18\x01 \x03(\v2\x17.exchange.ExchangeOfferR\x06offers\"\a\n" +
+	"\x05Empty2\x86\x06\n" +
 	"\x0fExchangeService\x12D\n" +
 	"\vCreateOffer\x12\x1c.exchange.CreateOfferRequest\x1a\x17.exchange.OfferResponse\x126\n" +
 	"\bGetOffer\x12\x11.exchange.OfferID\x1a\x17.exchange.OfferResponse\x129\n" +
@@ -495,7 +640,12 @@ const file_exchange_proto_rawDesc = "" +
 	"\x11ListPendingOffers\x12\x0f.exchange.Empty\x1a\x13.exchange.OfferList\x12D\n" +
 	"\vAcceptOffer\x12\x1c.exchange.AcceptOfferRequest\x1a\x17.exchange.OfferResponse\x12:\n" +
 	"\fDeclineOffer\x12\x11.exchange.OfferID\x1a\x17.exchange.OfferResponse\x121\n" +
-	"\vDeleteOffer\x12\x11.exchange.OfferID\x1a\x0f.exchange.EmptyBTZRgithub.com/OshakbayAigerim/read_space/exchange_service/proto/exchangepb;exchangepbb\x06proto3"
+	"\vDeleteOffer\x12\x11.exchange.OfferID\x1a\x0f.exchange.Empty\x12D\n" +
+	"\vUpdateOffer\x12\x1c.exchange.UpdateOfferRequest\x1a\x17.exchange.OfferResponse\x12B\n" +
+	"\x0eAddOfferedBook\x12\x17.exchange.BookOpRequest\x1a\x17.exchange.OfferResponse\x12E\n" +
+	"\x11RemoveOfferedBook\x12\x17.exchange.BookOpRequest\x1a\x17.exchange.OfferResponse\x125\n" +
+	"\rListAllOffers\x12\x0f.exchange.Empty\x1a\x13.exchange.OfferList\x12B\n" +
+	"\x12ListOffersByStatus\x12\x17.exchange.StatusRequest\x1a\x13.exchange.OfferListBTZRgithub.com/OshakbayAigerim/read_space/exchange_service/proto/exchangepb;exchangepbb\x06proto3"
 
 var (
 	file_exchange_proto_rawDescOnce sync.Once
@@ -509,39 +659,53 @@ func file_exchange_proto_rawDescGZIP() []byte {
 	return file_exchange_proto_rawDescData
 }
 
-var file_exchange_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
+var file_exchange_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
 var file_exchange_proto_goTypes = []any{
 	(*ExchangeOffer)(nil),      // 0: exchange.ExchangeOffer
 	(*CreateOfferRequest)(nil), // 1: exchange.CreateOfferRequest
-	(*OfferID)(nil),            // 2: exchange.OfferID
-	(*OfferResponse)(nil),      // 3: exchange.OfferResponse
-	(*OfferList)(nil),          // 4: exchange.OfferList
-	(*UserID)(nil),             // 5: exchange.UserID
-	(*Empty)(nil),              // 6: exchange.Empty
-	(*AcceptOfferRequest)(nil), // 7: exchange.AcceptOfferRequest
+	(*AcceptOfferRequest)(nil), // 2: exchange.AcceptOfferRequest
+	(*UpdateOfferRequest)(nil), // 3: exchange.UpdateOfferRequest
+	(*BookOpRequest)(nil),      // 4: exchange.BookOpRequest
+	(*StatusRequest)(nil),      // 5: exchange.StatusRequest
+	(*OfferID)(nil),            // 6: exchange.OfferID
+	(*UserID)(nil),             // 7: exchange.UserID
+	(*OfferResponse)(nil),      // 8: exchange.OfferResponse
+	(*OfferList)(nil),          // 9: exchange.OfferList
+	(*Empty)(nil),              // 10: exchange.Empty
 }
 var file_exchange_proto_depIdxs = []int32{
-	0, // 0: exchange.OfferResponse.offer:type_name -> exchange.ExchangeOffer
-	0, // 1: exchange.OfferList.offers:type_name -> exchange.ExchangeOffer
-	1, // 2: exchange.ExchangeService.CreateOffer:input_type -> exchange.CreateOfferRequest
-	2, // 3: exchange.ExchangeService.GetOffer:input_type -> exchange.OfferID
-	5, // 4: exchange.ExchangeService.ListOffersByUser:input_type -> exchange.UserID
-	6, // 5: exchange.ExchangeService.ListPendingOffers:input_type -> exchange.Empty
-	7, // 6: exchange.ExchangeService.AcceptOffer:input_type -> exchange.AcceptOfferRequest
-	2, // 7: exchange.ExchangeService.DeclineOffer:input_type -> exchange.OfferID
-	2, // 8: exchange.ExchangeService.DeleteOffer:input_type -> exchange.OfferID
-	3, // 9: exchange.ExchangeService.CreateOffer:output_type -> exchange.OfferResponse
-	3, // 10: exchange.ExchangeService.GetOffer:output_type -> exchange.OfferResponse
-	4, // 11: exchange.ExchangeService.ListOffersByUser:output_type -> exchange.OfferList
-	4, // 12: exchange.ExchangeService.ListPendingOffers:output_type -> exchange.OfferList
-	3, // 13: exchange.ExchangeService.AcceptOffer:output_type -> exchange.OfferResponse
-	3, // 14: exchange.ExchangeService.DeclineOffer:output_type -> exchange.OfferResponse
-	6, // 15: exchange.ExchangeService.DeleteOffer:output_type -> exchange.Empty
-	9, // [9:16] is the sub-list for method output_type
-	2, // [2:9] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	0,  // 0: exchange.UpdateOfferRequest.offer:type_name -> exchange.ExchangeOffer
+	0,  // 1: exchange.OfferResponse.offer:type_name -> exchange.ExchangeOffer
+	0,  // 2: exchange.OfferList.offers:type_name -> exchange.ExchangeOffer
+	1,  // 3: exchange.ExchangeService.CreateOffer:input_type -> exchange.CreateOfferRequest
+	6,  // 4: exchange.ExchangeService.GetOffer:input_type -> exchange.OfferID
+	7,  // 5: exchange.ExchangeService.ListOffersByUser:input_type -> exchange.UserID
+	10, // 6: exchange.ExchangeService.ListPendingOffers:input_type -> exchange.Empty
+	2,  // 7: exchange.ExchangeService.AcceptOffer:input_type -> exchange.AcceptOfferRequest
+	6,  // 8: exchange.ExchangeService.DeclineOffer:input_type -> exchange.OfferID
+	6,  // 9: exchange.ExchangeService.DeleteOffer:input_type -> exchange.OfferID
+	3,  // 10: exchange.ExchangeService.UpdateOffer:input_type -> exchange.UpdateOfferRequest
+	4,  // 11: exchange.ExchangeService.AddOfferedBook:input_type -> exchange.BookOpRequest
+	4,  // 12: exchange.ExchangeService.RemoveOfferedBook:input_type -> exchange.BookOpRequest
+	10, // 13: exchange.ExchangeService.ListAllOffers:input_type -> exchange.Empty
+	5,  // 14: exchange.ExchangeService.ListOffersByStatus:input_type -> exchange.StatusRequest
+	8,  // 15: exchange.ExchangeService.CreateOffer:output_type -> exchange.OfferResponse
+	8,  // 16: exchange.ExchangeService.GetOffer:output_type -> exchange.OfferResponse
+	9,  // 17: exchange.ExchangeService.ListOffersByUser:output_type -> exchange.OfferList
+	9,  // 18: exchange.ExchangeService.ListPendingOffers:output_type -> exchange.OfferList
+	8,  // 19: exchange.ExchangeService.AcceptOffer:output_type -> exchange.OfferResponse
+	8,  // 20: exchange.ExchangeService.DeclineOffer:output_type -> exchange.OfferResponse
+	10, // 21: exchange.ExchangeService.DeleteOffer:output_type -> exchange.Empty
+	8,  // 22: exchange.ExchangeService.UpdateOffer:output_type -> exchange.OfferResponse
+	8,  // 23: exchange.ExchangeService.AddOfferedBook:output_type -> exchange.OfferResponse
+	8,  // 24: exchange.ExchangeService.RemoveOfferedBook:output_type -> exchange.OfferResponse
+	9,  // 25: exchange.ExchangeService.ListAllOffers:output_type -> exchange.OfferList
+	9,  // 26: exchange.ExchangeService.ListOffersByStatus:output_type -> exchange.OfferList
+	15, // [15:27] is the sub-list for method output_type
+	3,  // [3:15] is the sub-list for method input_type
+	3,  // [3:3] is the sub-list for extension type_name
+	3,  // [3:3] is the sub-list for extension extendee
+	0,  // [0:3] is the sub-list for field type_name
 }
 
 func init() { file_exchange_proto_init() }
@@ -555,7 +719,7 @@ func file_exchange_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_exchange_proto_rawDesc), len(file_exchange_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   8,
+			NumMessages:   11,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

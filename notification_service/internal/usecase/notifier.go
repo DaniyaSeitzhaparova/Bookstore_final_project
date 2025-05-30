@@ -105,3 +105,47 @@ func (n *Notifier) SendOfferAccepted(ctx context.Context, evt domain.OfferAccept
 	n.sendEmail(email, subject, body)
 	log.Printf(" Email sent to %s", email)
 }
+
+func (n *Notifier) SendBookAssigned(ctx context.Context, evt domain.BookAssignedEvent) {
+	email, err := n.getEmail(ctx, evt.UserID)
+	if err != nil {
+		log.Printf("cannot fetch email for %s: %v", evt.UserID, err)
+		return
+	}
+	subject := "Book Assigned"
+	body := fmt.Sprintf("The book %s has been assigned to you.", evt.BookID)
+	n.sendEmail(email, subject, body)
+}
+
+func (n *Notifier) SendBookUnassigned(ctx context.Context, evt domain.BookUnassignedEvent) {
+	email, err := n.getEmail(ctx, evt.UserID)
+	if err != nil {
+		log.Printf("cannot fetch email for %s: %v", evt.UserID, err)
+		return
+	}
+	subject := "Book Unassigned"
+	body := fmt.Sprintf("The book %s has been unassigned from you.", evt.BookID)
+	n.sendEmail(email, subject, body)
+}
+
+func (n *Notifier) SendEntryDeleted(ctx context.Context, evt domain.EntryDeletedEvent) {
+	email, err := n.getEmail(ctx, evt.UserID)
+	if err != nil {
+		log.Printf("cannot fetch email for %s: %v", evt.UserID, err)
+		return
+	}
+	subject := "Library Entry Deleted"
+	body := fmt.Sprintf("Your library entry %s was deleted.", evt.EntryID)
+	n.sendEmail(email, subject, body)
+}
+
+func (n *Notifier) SendEntryUpdated(ctx context.Context, evt domain.EntryUpdatedEvent) {
+	email, err := n.getEmail(ctx, evt.UserID)
+	if err != nil {
+		log.Printf("cannot fetch email for %s: %v", evt.UserID, err)
+		return
+	}
+	subject := "Library Entry Updated"
+	body := fmt.Sprintf("Your library entry %s was updated (new book %s).", evt.EntryID, evt.BookID)
+	n.sendEmail(email, subject, body)
+}

@@ -3,11 +3,11 @@ package cache
 import (
 	"context"
 	"encoding/json"
-	"github.com/redis/go-redis/v9"
 	"time"
 
 	"github.com/OshakbayAigerim/read_space/user_library_service/internal/domain"
 	"github.com/OshakbayAigerim/read_space/user_library_service/internal/repository"
+	"github.com/redis/go-redis/v9"
 )
 
 type UserLibraryCache interface {
@@ -28,8 +28,8 @@ func NewRedisUserLibraryCache(repo repository.UserBookRepo, rdb redis.UniversalC
 func (c *RedisUserLibraryCache) Get(ctx context.Context, userID string) ([]*domain.UserBook, error) {
 	key := "user_books:" + userID
 
-	data, err := c.rdb.Get(ctx, key).Bytes()
-	if err == nil {
+	// Try cache
+	if data, err := c.rdb.Get(ctx, key).Bytes(); err == nil {
 		var entries []*domain.UserBook
 		if err := json.Unmarshal(data, &entries); err == nil {
 			return entries, nil
@@ -38,11 +38,13 @@ func (c *RedisUserLibraryCache) Get(ctx context.Context, userID string) ([]*doma
 		return nil, err
 	}
 
+	// Fallback to repo
 	entries, err := c.repo.ListUserBooks(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
 
+	// Populate cache
 	if blob, err := json.Marshal(entries); err == nil {
 		_ = c.rdb.Set(ctx, key, blob, c.ttl).Err()
 	}
