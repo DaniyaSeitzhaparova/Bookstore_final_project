@@ -43,6 +43,7 @@ func (h *OrderHandler) CreateOrder(ctx context.Context, req *pb.CreateOrderReque
 	}
 
 	ord := &domain.Order{
+		ID:      primitive.NewObjectID(),
 		UserID:  uid,
 		BookIDs: bids,
 		Status:  "Created",
@@ -61,106 +62,13 @@ func (h *OrderHandler) CreateOrder(ctx context.Context, req *pb.CreateOrderReque
 		UserID:  created.UserID.Hex(),
 		BookIDs: req.BookIds,
 	}
-	raw, _ := json.Marshal(evt)
-	if err := h.nc.Publish("orders.created", raw); err != nil {
-		log.Printf("⚠Failed to publish orders.created: %v", err)
+	if raw, err := json.Marshal(evt); err == nil {
+		if err := h.nc.Publish("orders.created", raw); err != nil {
+			log.Printf("⚠️ publish orders.created: %v", err)
+		}
 	}
 
-	var respBookIDs []string
-	for _, oid := range created.BookIDs {
-		respBookIDs = append(respBookIDs, oid.Hex())
-	}
-	return &pb.OrderResponse{
-		Order: &pb.Order{
-			Id:        created.ID.Hex(),
-			UserId:    created.UserID.Hex(),
-			BookIds:   respBookIDs,
-			Status:    created.Status,
-			CreatedAt: created.CreatedAt.Time().String(),
-			UpdatedAt: created.UpdatedAt.Time().String(),
-		},
-	}, nil
-}
-
-func (h *OrderHandler) ReturnBook(ctx context.Context, req *pb.OrderID) (*pb.OrderResponse, error) {
-	if req == nil || req.Id == "" {
-		return nil, status.Error(codes.InvalidArgument, "order id is required")
-	}
-	o, err := h.uc.ReturnBook(ctx, req.Id)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "cannot return order: %v", err)
-	}
-
-	evt := struct {
-		OrderID string   `json:"order_id"`
-		UserID  string   `json:"user_id"`
-		BookIDs []string `json:"book_ids"`
-	}{
-		OrderID: o.ID.Hex(),
-		UserID:  o.UserID.Hex(),
-		BookIDs: func(ids []primitive.ObjectID) []string {
-			out := make([]string, len(ids))
-			for i, x := range ids {
-				out[i] = x.Hex()
-			}
-			return out
-		}(o.BookIDs),
-	}
-	raw, _ := json.Marshal(evt)
-	if err := h.nc.Publish("order.completed", raw); err != nil {
-		log.Printf("⚠ Failed to publish order.completed: %v", err)
-	}
-
-	var bidStr []string
-	for _, x := range o.BookIDs {
-		bidStr = append(bidStr, x.Hex())
-	}
-	return &pb.OrderResponse{
-		Order: &pb.Order{
-			Id:        o.ID.Hex(),
-			UserId:    o.UserID.Hex(),
-			BookIds:   bidStr,
-			Status:    o.Status,
-			CreatedAt: o.CreatedAt.Time().String(),
-			UpdatedAt: o.UpdatedAt.Time().String(),
-		},
-	}, nil
-}
-
-func (h *OrderHandler) DeleteOrder(ctx context.Context, req *pb.OrderID) (*pb.Empty, error) {
-	if req == nil || req.Id == "" {
-		return nil, status.Error(codes.InvalidArgument, "order id is required")
-	}
-
-	o, err := h.uc.GetOrderByID(ctx, req.Id)
-	if err != nil {
-		return nil, status.Errorf(codes.NotFound, "order not found: %v", err)
-	}
-
-	evt := struct {
-		OrderID string   `json:"order_id"`
-		UserID  string   `json:"user_id"`
-		BookIDs []string `json:"book_ids"`
-	}{
-		OrderID: o.ID.Hex(),
-		UserID:  o.UserID.Hex(),
-		BookIDs: func(ids []primitive.ObjectID) []string {
-			out := make([]string, len(ids))
-			for i, x := range ids {
-				out[i] = x.Hex()
-			}
-			return out
-		}(o.BookIDs),
-	}
-	raw, _ := json.Marshal(evt)
-	if err := h.nc.Publish("order.deleted", raw); err != nil {
-		log.Printf("⚠ Failed to publish order.deleted: %v", err)
-	}
-
-	if err := h.uc.DeleteOrder(ctx, req.Id); err != nil {
-		return nil, status.Errorf(codes.Internal, "cannot delete order: %v", err)
-	}
-	return &pb.Empty{}, nil
+	return &pb.OrderResponse{Order: mapDomain(created)}, nil
 }
 
 func (h *OrderHandler) GetOrder(ctx context.Context, req *pb.OrderID) (*pb.OrderResponse, error) {
@@ -171,20 +79,7 @@ func (h *OrderHandler) GetOrder(ctx context.Context, req *pb.OrderID) (*pb.Order
 	if err != nil {
 		return nil, status.Errorf(codes.NotFound, "order not found: %v", err)
 	}
-	var pbBids []string
-	for _, bid := range ord.BookIDs {
-		pbBids = append(pbBids, bid.Hex())
-	}
-	return &pb.OrderResponse{
-		Order: &pb.Order{
-			Id:        ord.ID.Hex(),
-			UserId:    ord.UserID.Hex(),
-			BookIds:   pbBids,
-			Status:    ord.Status,
-			CreatedAt: ord.CreatedAt.Time().String(),
-			UpdatedAt: ord.UpdatedAt.Time().String(),
-		},
-	}, nil
+	return &pb.OrderResponse{Order: mapDomain(ord)}, nil
 }
 
 func (h *OrderHandler) ListOrdersByUser(ctx context.Context, req *pb.ListOrdersByUserRequest) (*pb.OrderList, error) {
@@ -195,22 +90,7 @@ func (h *OrderHandler) ListOrdersByUser(ctx context.Context, req *pb.ListOrdersB
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "cannot list orders: %v", err)
 	}
-	var list []*pb.Order
-	for _, o := range orders {
-		var pbBids []string
-		for _, bid := range o.BookIDs {
-			pbBids = append(pbBids, bid.Hex())
-		}
-		list = append(list, &pb.Order{
-			Id:        o.ID.Hex(),
-			UserId:    o.UserID.Hex(),
-			BookIds:   pbBids,
-			Status:    o.Status,
-			CreatedAt: o.CreatedAt.Time().String(),
-			UpdatedAt: o.UpdatedAt.Time().String(),
-		})
-	}
-	return &pb.OrderList{Orders: list}, nil
+	return &pb.OrderList{Orders: mapDomainList(orders)}, nil
 }
 
 func (h *OrderHandler) CancelOrder(ctx context.Context, req *pb.OrderID) (*pb.OrderResponse, error) {
@@ -221,18 +101,124 @@ func (h *OrderHandler) CancelOrder(ctx context.Context, req *pb.OrderID) (*pb.Or
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "cannot cancel order: %v", err)
 	}
-	var bids []string
-	for _, bid := range o.BookIDs {
-		bids = append(bids, bid.Hex())
+	return &pb.OrderResponse{Order: mapDomain(o)}, nil
+}
+
+func (h *OrderHandler) ReturnBook(ctx context.Context, req *pb.OrderID) (*pb.OrderResponse, error) {
+	if req == nil || req.Id == "" {
+		return nil, status.Error(codes.InvalidArgument, "order id is required")
 	}
-	return &pb.OrderResponse{
-		Order: &pb.Order{
-			Id:        o.ID.Hex(),
-			UserId:    o.UserID.Hex(),
-			BookIds:   bids,
-			Status:    o.Status,
-			CreatedAt: o.CreatedAt.Time().String(),
-			UpdatedAt: o.UpdatedAt.Time().String(),
-		},
-	}, nil
+	o, err := h.uc.ReturnBook(ctx, req.Id)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "cannot return order: %v", err)
+	}
+	return &pb.OrderResponse{Order: mapDomain(o)}, nil
+}
+
+func (h *OrderHandler) DeleteOrder(ctx context.Context, req *pb.OrderID) (*pb.Empty, error) {
+	if req == nil || req.Id == "" {
+		return nil, status.Error(codes.InvalidArgument, "order id is required")
+	}
+	if err := h.uc.DeleteOrder(ctx, req.Id); err != nil {
+		return nil, status.Errorf(codes.Internal, "cannot delete order: %v", err)
+	}
+	return &pb.Empty{}, nil
+}
+
+func (h *OrderHandler) UpdateOrder(ctx context.Context, req *pb.UpdateOrderRequest) (*pb.OrderResponse, error) {
+	if req == nil || req.Order == nil || req.Order.Id == "" {
+		return nil, status.Error(codes.InvalidArgument, "order object with id is required")
+	}
+	oid, err := primitive.ObjectIDFromHex(req.Order.Id)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid order id")
+	}
+	uid, err := primitive.ObjectIDFromHex(req.Order.UserId)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid user_id")
+	}
+	var bids []primitive.ObjectID
+	for _, id := range req.Order.BookIds {
+		bid, err := primitive.ObjectIDFromHex(id)
+		if err != nil {
+			return nil, status.Errorf(codes.InvalidArgument, "invalid book_id %q", id)
+		}
+		bids = append(bids, bid)
+	}
+
+	dom := &domain.Order{
+		ID:      oid,
+		UserID:  uid,
+		BookIDs: bids,
+		Status:  req.Order.Status,
+	}
+	updated, err := h.uc.UpdateOrder(ctx, dom)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "cannot update order: %v", err)
+	}
+	return &pb.OrderResponse{Order: mapDomain(updated)}, nil
+}
+
+func (h *OrderHandler) AddBookToOrder(ctx context.Context, req *pb.BookOperationRequest) (*pb.OrderResponse, error) {
+	if req == nil || req.OrderId == "" || req.BookId == "" {
+		return nil, status.Error(codes.InvalidArgument, "order_id and book_id are required")
+	}
+	o, err := h.uc.AddBook(ctx, req.OrderId, req.BookId)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "cannot add book to order: %v", err)
+	}
+	return &pb.OrderResponse{Order: mapDomain(o)}, nil
+}
+
+func (h *OrderHandler) RemoveBookFromOrder(ctx context.Context, req *pb.BookOperationRequest) (*pb.OrderResponse, error) {
+	if req == nil || req.OrderId == "" || req.BookId == "" {
+		return nil, status.Error(codes.InvalidArgument, "order_id and book_id are required")
+	}
+	o, err := h.uc.RemoveBook(ctx, req.OrderId, req.BookId)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "cannot remove book from order: %v", err)
+	}
+	return &pb.OrderResponse{Order: mapDomain(o)}, nil
+}
+
+func (h *OrderHandler) ListAllOrders(ctx context.Context, _ *pb.Empty) (*pb.OrderList, error) {
+	all, err := h.uc.ListAll(ctx)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "cannot list all orders: %v", err)
+	}
+	return &pb.OrderList{Orders: mapDomainList(all)}, nil
+}
+
+func (h *OrderHandler) ListOrdersByStatus(ctx context.Context, req *pb.StatusRequest) (*pb.OrderList, error) {
+	if req == nil || req.Status == "" {
+		return nil, status.Error(codes.InvalidArgument, "status is required")
+	}
+	filtered, err := h.uc.ListByStatus(ctx, req.Status)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "cannot list orders by status: %v", err)
+	}
+	return &pb.OrderList{Orders: mapDomainList(filtered)}, nil
+}
+
+func mapDomain(o *domain.Order) *pb.Order {
+	var bookIDs []string
+	for _, id := range o.BookIDs {
+		bookIDs = append(bookIDs, id.Hex())
+	}
+	return &pb.Order{
+		Id:        o.ID.Hex(),
+		UserId:    o.UserID.Hex(),
+		BookIds:   bookIDs,
+		Status:    o.Status,
+		CreatedAt: o.CreatedAt.Time().String(),
+		UpdatedAt: o.UpdatedAt.Time().String(),
+	}
+}
+
+func mapDomainList(list []*domain.Order) []*pb.Order {
+	var out []*pb.Order
+	for _, o := range list {
+		out = append(out, mapDomain(o))
+	}
+	return out
 }

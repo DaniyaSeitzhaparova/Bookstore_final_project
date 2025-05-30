@@ -14,6 +14,11 @@ type OrderUseCase interface {
 	CancelOrder(ctx context.Context, id string) (*domain.Order, error)
 	ReturnBook(ctx context.Context, id string) (*domain.Order, error)
 	DeleteOrder(ctx context.Context, id string) error
+	UpdateOrder(ctx context.Context, order *domain.Order) (*domain.Order, error)
+	AddBook(ctx context.Context, orderID, bookID string) (*domain.Order, error)
+	RemoveBook(ctx context.Context, orderID, bookID string) (*domain.Order, error)
+	ListAll(ctx context.Context) ([]*domain.Order, error)
+	ListByStatus(ctx context.Context, status string) ([]*domain.Order, error)
 }
 
 type orderUseCase struct {
@@ -46,4 +51,24 @@ func (u *orderUseCase) ReturnBook(ctx context.Context, id string) (*domain.Order
 
 func (u *orderUseCase) DeleteOrder(ctx context.Context, id string) error {
 	return u.repo.Delete(ctx, id)
+}
+
+func (u *orderUseCase) UpdateOrder(ctx context.Context, order *domain.Order) (*domain.Order, error) {
+	return u.repo.Update(ctx, order)
+}
+
+func (u *orderUseCase) AddBook(ctx context.Context, orderID, bookID string) (*domain.Order, error) {
+	return u.repo.AddBook(ctx, orderID, bookID)
+}
+
+func (u *orderUseCase) RemoveBook(ctx context.Context, orderID, bookID string) (*domain.Order, error) {
+	return u.repo.RemoveBook(ctx, orderID, bookID)
+}
+
+func (u *orderUseCase) ListAll(ctx context.Context) ([]*domain.Order, error) {
+	return u.repo.ListAll(ctx)
+}
+
+func (u *orderUseCase) ListByStatus(ctx context.Context, status string) ([]*domain.Order, error) {
+	return u.repo.ListByStatus(ctx, status)
 }

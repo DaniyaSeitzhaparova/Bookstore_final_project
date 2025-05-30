@@ -2,7 +2,6 @@ package repository
 
 import (
 	"context"
-	"log"
 	"time"
 
 	"github.com/OshakbayAigerim/read_space/order_service/internal/cache"
@@ -34,11 +33,7 @@ func (r *mongoOrderRepo) Create(ctx context.Context, order *domain.Order) (*doma
 	if _, err := r.collection.InsertOne(ctx, order); err != nil {
 		return nil, err
 	}
-
-	if err := r.cache.DeleteByUser(ctx, order.UserID.Hex()); err != nil {
-		log.Printf("Failed to invalidate user cache: %v", err)
-	}
-
+	r.cache.DeleteByUser(ctx, order.UserID.Hex())
 	return order, nil
 }
 
@@ -59,10 +54,7 @@ func (r *mongoOrderRepo) GetByID(ctx context.Context, id string) (*domain.Order,
 		return nil, err
 	}
 
-	go func() {
-		_ = r.cache.Set(context.Background(), &o)
-	}()
-
+	go r.cache.Set(context.Background(), &o)
 	return &o, nil
 }
 
@@ -92,11 +84,7 @@ func (r *mongoOrderRepo) ListByUser(ctx context.Context, userID string) ([]*doma
 		}
 		orders = append(orders, &o)
 	}
-
-	go func() {
-		_ = r.cache.SetByUser(context.Background(), userID, orders)
-	}()
-
+	go r.cache.SetByUser(context.Background(), userID, orders)
 	return orders, nil
 }
 
@@ -113,7 +101,6 @@ func (r *mongoOrderRepo) updateStatusWithCache(ctx context.Context, id, status s
 	if err != nil {
 		return nil, err
 	}
-
 	var existing domain.Order
 	if err := r.collection.FindOne(ctx, bson.M{"_id": objID}).Decode(&existing); err != nil {
 		return nil, err
@@ -130,14 +117,125 @@ func (r *mongoOrderRepo) updateStatusWithCache(ctx context.Context, id, status s
 		return nil, err
 	}
 
-	if err := r.cache.Delete(ctx, id); err != nil {
-		log.Printf("Failed to delete order cache: %v", err)
-	}
-	if err := r.cache.DeleteByUser(ctx, existing.UserID.Hex()); err != nil {
-		log.Printf("Failed to delete user cache: %v", err)
+	r.cache.Delete(ctx, id)
+	r.cache.DeleteByUser(ctx, existing.UserID.Hex())
+	return &updated, nil
+}
+
+func (r *mongoOrderRepo) Update(ctx context.Context, order *domain.Order) (*domain.Order, error) {
+	now := primitive.NewDateTimeFromTime(time.Now())
+	after := options.After
+	opt := options.FindOneAndUpdateOptions{ReturnDocument: &after}
+	filter := bson.M{"_id": order.ID}
+	update := bson.M{"$set": bson.M{
+		"user_id":    order.UserID,
+		"book_ids":   order.BookIDs,
+		"status":     order.Status,
+		"updated_at": now,
+	}}
+
+	var updated domain.Order
+	if err := r.collection.FindOneAndUpdate(ctx, filter, update, &opt).Decode(&updated); err != nil {
+		return nil, err
 	}
 
+	r.cache.Delete(ctx, order.ID.Hex())
+	r.cache.DeleteByUser(ctx, order.UserID.Hex())
 	return &updated, nil
+}
+
+func (r *mongoOrderRepo) AddBook(ctx context.Context, orderID, bookID string) (*domain.Order, error) {
+	objID, err := primitive.ObjectIDFromHex(orderID)
+	if err != nil {
+		return nil, err
+	}
+	bid, err := primitive.ObjectIDFromHex(bookID)
+	if err != nil {
+		return nil, err
+	}
+
+	now := primitive.NewDateTimeFromTime(time.Now())
+	after := options.After
+	opt := options.FindOneAndUpdateOptions{ReturnDocument: &after}
+	filter := bson.M{"_id": objID}
+	update := bson.M{
+		"$push": bson.M{"book_ids": bid},
+		"$set":  bson.M{"updated_at": now},
+	}
+
+	var updated domain.Order
+	if err := r.collection.FindOneAndUpdate(ctx, filter, update, &opt).Decode(&updated); err != nil {
+		return nil, err
+	}
+
+	r.cache.Delete(ctx, orderID)
+	r.cache.DeleteByUser(ctx, updated.UserID.Hex())
+	return &updated, nil
+}
+
+func (r *mongoOrderRepo) RemoveBook(ctx context.Context, orderID, bookID string) (*domain.Order, error) {
+	objID, err := primitive.ObjectIDFromHex(orderID)
+	if err != nil {
+		return nil, err
+	}
+	bid, err := primitive.ObjectIDFromHex(bookID)
+	if err != nil {
+		return nil, err
+	}
+
+	now := primitive.NewDateTimeFromTime(time.Now())
+	after := options.After
+	opt := options.FindOneAndUpdateOptions{ReturnDocument: &after}
+	filter := bson.M{"_id": objID}
+	update := bson.M{
+		"$pull": bson.M{"book_ids": bid},
+		"$set":  bson.M{"updated_at": now},
+	}
+
+	var updated domain.Order
+	if err := r.collection.FindOneAndUpdate(ctx, filter, update, &opt).Decode(&updated); err != nil {
+		return nil, err
+	}
+
+	r.cache.Delete(ctx, orderID)
+	r.cache.DeleteByUser(ctx, updated.UserID.Hex())
+	return &updated, nil
+}
+
+func (r *mongoOrderRepo) ListAll(ctx context.Context) ([]*domain.Order, error) {
+	cursor, err := r.collection.Find(ctx, bson.M{})
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	var orders []*domain.Order
+	for cursor.Next(ctx) {
+		var o domain.Order
+		if err := cursor.Decode(&o); err != nil {
+			return nil, err
+		}
+		orders = append(orders, &o)
+	}
+	return orders, nil
+}
+
+func (r *mongoOrderRepo) ListByStatus(ctx context.Context, status string) ([]*domain.Order, error) {
+	cursor, err := r.collection.Find(ctx, bson.M{"status": status})
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	var orders []*domain.Order
+	for cursor.Next(ctx) {
+		var o domain.Order
+		if err := cursor.Decode(&o); err != nil {
+			return nil, err
+		}
+		orders = append(orders, &o)
+	}
+	return orders, nil
 }
 
 func (r *mongoOrderRepo) Delete(ctx context.Context, id string) error {
@@ -155,12 +253,7 @@ func (r *mongoOrderRepo) Delete(ctx context.Context, id string) error {
 		return err
 	}
 
-	if err := r.cache.Delete(ctx, id); err != nil {
-		log.Printf("Failed to delete order cache: %v", err)
-	}
-	if err := r.cache.DeleteByUser(ctx, existing.UserID.Hex()); err != nil {
-		log.Printf("Failed to delete user cache: %v", err)
-	}
-
+	r.cache.Delete(ctx, id)
+	r.cache.DeleteByUser(ctx, existing.UserID.Hex())
 	return nil
 }

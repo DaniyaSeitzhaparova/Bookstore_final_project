@@ -17,7 +17,7 @@ func ConnectMongo() *mongo.Client {
 
 	client, err := mongo.Connect(ctx, options.Client().ApplyURI(uri))
 	if err != nil {
-		log.Fatalf("MongoDB connect error: %v", err)
+		log.Fatalf(" MongoDB connect error: %v", err)
 	}
 	if err := client.Ping(ctx, nil); err != nil {
 		log.Fatalf("MongoDB ping error: %v", err)
