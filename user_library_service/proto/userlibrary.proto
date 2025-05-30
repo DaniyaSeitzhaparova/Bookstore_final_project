@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+package userlibrary;
+
+option go_package = "github.com/OshakbayAigerim/read_space/user_library_service/proto/userlibrarypb;userlibrarypb";
+
+message UserBook {
+  string id      = 1;
+  string user_id = 2;
+  string book_id = 3;
+}
+
+message AssignBookRequest {
+  string user_id = 1;
+  string book_id = 2;
+}
+message UnassignBookRequest {
+  string user_id = 1;
+  string book_id = 2;
+}
+message ListUserBooksRequest {
+  string user_id = 1;
+}
+
+message AssignBookResponse {
+  UserBook entry = 1;
+}
+message UnassignBookResponse {
+  bool success = 1;
+}
+message ListUserBooksResponse {
+  repeated UserBook entries = 1;
+}
+
+service UserLibraryService {
+  rpc AssignBook   (AssignBookRequest)   returns (AssignBookResponse);
+  rpc UnassignBook (UnassignBookRequest) returns (UnassignBookResponse);
+  rpc ListUserBooks(ListUserBooksRequest) returns (ListUserBooksResponse);
+}
