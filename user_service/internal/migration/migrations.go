@@ -27,5 +27,5 @@ func CreateUserCollectionIndexes(db *mongo.Database) {
 		log.Fatalf("Failed to create indexes: %v", err)
 	}
 
-	log.Println("✅ Created indexes for users collection")
+	log.Println("Created indexes for users collection")
 }
