@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package user;
+
+option go_package = "github.com/OshakbayAigerim/user_service/proto/userpb;userpb";
+
+message User {
+string id = 1;
+string name = 2;
+string email = 3;
+string password = 4;
+}
+
+message CreateUserRequest {
+User user = 1;
+}
+
+message UserResponse {
+User user = 1;
+}
+
+message UserID {
+string id = 1;
+}
+
+message Empty {}
+
+service UserService {
+rpc CreateUser(CreateUserRequest) returns (UserResponse);
+rpc GetUser(UserID) returns (UserResponse);
+rpc ListAllUsers(Empty) returns (stream User);
+}
